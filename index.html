@@ -76,10 +76,17 @@
             text-align: center; position: relative; overflow: hidden;
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
-        /* 浮水印 KO */
+        
+        /* 修正點：正立粗體浮水印 KO */
         .watermark {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg);
-            font-size: 15rem; color: rgba(0, 0, 0, 0.05); font-weight: 900; pointer-events: none; z-index: 0;
+            position: absolute; top: 50%; left: 50%; 
+            /* 1. 移除了 rotate(-30deg) 2. 增加了 translate 來水平垂直置中 */
+            transform: translate(-50%, -50%);
+            font-size: 18rem; /* 稍微加大一點視覺效果更好 */
+            color: rgba(0, 0, 0, 0.04); /* 調整透明度 */
+            font-weight: 900; /* 加粗到極致 */
+            font-family: Arial, sans-serif; /* 使用更粗壯的無襯線字體 */
+            pointer-events: none; z-index: 0;
             white-space: nowrap;
         }
         .cert-content { position: relative; z-index: 1; }
@@ -307,18 +314,14 @@
     function updateLives() { document.getElementById('lives').innerText = "❤️".repeat(Math.max(0, lives)); }
     function getAlgoName(key) { return { bubble: '氣泡排序法', selection: '選擇排序法', insertion: '插入排序法' }[key]; }
 
-    // 顯示輸入畫面
-    function showInputOverlay() {
-        isGameRunning = false;
-        clearInterval(timerInterval);
-        document.getElementById('input-overlay').style.display = 'flex';
-    }
+    function showInputOverlay() { isGameRunning = false; clearInterval(timerInterval); document.getElementById('input-overlay').style.display = 'flex'; }
 
-    // 生成證書
     function generateCertificate() {
         const school = document.getElementById('school-name').value || "未填寫學校";
         const className = document.getElementById('class-name').value || "未填寫班級";
         const userName = document.getElementById('user-name').value || "挑戰者";
+        
+        document.displaySchool = school; document.displayClass = className; document.displayName = userName;
         
         document.getElementById('display-school').innerText = school;
         document.getElementById('display-class').innerText = className;
