@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>排序法終極挑戰：榮耀證書賽</title>
+    <title>演算法終極挑戰：個人榮耀賽</title>
     <style>
         :root {
             --poker-green: #1a5e3a;
@@ -52,17 +52,41 @@
             padding: 12px 20px; border-radius: 8px; font-weight: bold; display: inline-block; border-left: 5px solid var(--accent-gold);
         }
 
-        #controls { margin: 20px 0; }
         .game-btn { padding: 12px 30px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 8px; margin: 0 10px; font-weight: bold; color: white; transition: 0.2s; }
         .btn-swap { background: var(--accent-gold); color: #2d3436; }
         .btn-keep { background: var(--ui-blue); }
 
+        /* 輸入視窗 */
+        #input-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 10000;
+        }
+        .input-card { background: #fff; color: #333; padding: 30px; border-radius: 15px; width: 300px; text-align: left; }
+        .input-card h3 { margin-top: 0; color: var(--poker-green); }
+        .input-card input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
+
+        /* 證書設計 */
         #cert-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); justify-content: center; align-items: center; z-index: 9999;
         }
-        .cert-card { background: #fff; color: #333; padding: 40px; border-radius: 15px; border: 10px double #c5a059; width: 85%; max-width: 500px; text-align: center; }
-        .rank-box { font-size: 2.8rem; color: #d35400; margin: 20px 0; font-weight: 900; }
+        .cert-card { 
+            background: #fff; color: #333; padding: 50px; border-radius: 5px; 
+            border: 15px double #c5a059; width: 80%; max-width: 600px; 
+            text-align: center; position: relative; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        /* 浮水印 KO */
+        .watermark {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 15rem; color: rgba(0, 0, 0, 0.05); font-weight: 900; pointer-events: none; z-index: 0;
+            white-space: nowrap;
+        }
+        .cert-content { position: relative; z-index: 1; }
+        .cert-card h2 { font-size: 2.5rem; margin: 10px 0; color: #2c3e50; border-bottom: 2px solid #c5a059; display: inline-block; padding-bottom: 5px; }
+        .user-info { font-size: 1.4rem; margin: 20px 0; color: #555; font-weight: bold; }
+        .rank-box { font-size: 3rem; color: #d35400; margin: 15px 0; font-weight: 900; text-shadow: 1px 1px 0px #000; }
+        .cert-date { margin-top: 30px; font-style: italic; color: #888; }
 
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
         .shake { animation: shake 0.2s 3; }
@@ -86,26 +110,44 @@
         <div class="cards-container" id="board"></div>
         <div id="controls" style="display:none;">
             <button class="btn-swap game-btn" onclick="handleBubble(true)">🔄 需要交換</button>
-            <button class="btn-keep game-btn" onclick="handleBubble(false)">➡️ 不用交換</button>
+            <button class="btn-keep game-btn" onclick="handleBubble(false)">➡️ 不動</button>
         </div>
         <button id="start-btn" class="game-btn btn-keep" onclick="startGame()" style="display:block; margin: 20px auto; font-size: 1.5rem;">🏆 進入排序賽</button>
     </div>
 
     <div class="footer-note">
-        💡 規則：入門/基礎級限時 30s，進階/專業級 40s。答錯或逾時扣除 ❤️。
+        💡 規則：答錯或逾時扣除 ❤️。完成所有關卡即可獲得個人榮譽證書。
+    </div>
+</div>
+
+<div id="input-overlay">
+    <div class="input-card">
+        <h3>挑戰結束！</h3>
+        <p>請輸入資料以產生證書：</p>
+        <input type="text" id="school-name" placeholder="學校名稱">
+        <input type="text" id="class-name" placeholder="班級 (例: 801)">
+        <input type="text" id="user-name" placeholder="姓名">
+        <button class="game-btn btn-keep" style="width: 100%; margin: 10px 0;" onclick="generateCertificate()">頒發證書</button>
     </div>
 </div>
 
 <div id="cert-screen">
     <div class="cert-card">
-        <p>CONGRATULATIONS</p>
-        <h2>演算法挑戰證書</h2>
-        <hr>
-        <p>恭喜玩家榮獲等級：</p>
-        <div class="rank-box" id="final-rank">入門級</div>
-        <p id="final-stats">完成題數: 0/12</p>
-        <p id="final-msg">你是演算法界的明日之星！</p>
-        <button class="game-btn btn-keep" onclick="resetGame()" style="margin-top:20px; background: #8e44ad;">🔄 重新挑戰</button>
+        <div class="watermark">KO</div>
+        <div class="cert-content">
+            <p style="letter-spacing: 5px;">CERTIFICATE</p>
+            <h2>演算法挑戰榮譽證書</h2>
+            <div class="user-info">
+                <span id="display-school">某某學校</span><br>
+                <span id="display-class">XXX 班</span> <span id="display-name">王小明</span> 同學
+            </div>
+            <p>參加演算法排序挑戰賽，表現優異，特頒此證以資鼓勵。</p>
+            <p style="margin-bottom: 0;">榮獲稱號：</p>
+            <div class="rank-box" id="final-rank">入門級</div>
+            <p id="final-stats">完成題數: 0/12</p>
+            <div class="cert-date">發證日期：<span id="cert-date-now"></span></div>
+            <button class="game-btn btn-keep" onclick="resetGame()" style="margin-top:20px; background: #8e44ad;">🔄 重新挑戰</button>
+        </div>
     </div>
 </div>
 
@@ -129,56 +171,42 @@
     let timerInterval = null;
     let isGameRunning = false;
 
-    // 啟動遊戲
     function startGame() {
         document.getElementById('start-btn').style.display = 'none';
         isGameRunning = true;
         initQuestion();
     }
 
-    // 修正：重新挑戰函數
     function resetGame() {
-        // 1. 重置所有變數
         currentLevelIdx = 0;
         currentQuestionIdx = 0;
         lives = 5;
         isGameRunning = false;
         clearInterval(timerInterval);
-        
-        // 2. 恢復 UI 狀態
         document.getElementById('cert-screen').style.display = 'none';
+        document.getElementById('input-overlay').style.display = 'none';
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('board').innerHTML = '';
         document.getElementById('controls').style.display = 'none';
-        document.getElementById('timer-bar').style.width = "100%";
         document.getElementById('mission-badge').innerText = "點擊下方按鈕開始挑戰";
         document.getElementById('level-title').innerText = "準備挑戰...";
         updateLives();
-        
-        // 3. 顯示開始按鈕
-        updateStatus("挑戰已重置，準備好了嗎？", "info");
     }
 
     function initQuestion() {
-        if (lives <= 0) return endGame();
-        
+        if (lives <= 0) return showInputOverlay();
         const config = LEVELS[currentLevelIdx];
         document.getElementById('level-title').innerText = `等級: ${config.name} (${currentQuestionIdx + 1}/${config.questions})`;
-        
         const pool = Array.from({length: config.range}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
         cards = pool.slice(0, config.count);
         if (config.reverse) cards.sort((a,b) => b - a);
-
         const algos = ['bubble', 'selection', 'insertion'];
         currentAlgo = config.reverse ? 'insertion' : algos[Math.floor(Math.random() * 3)];
-        
         document.getElementById('mission-badge').innerText = `目前任務：【${getAlgoName(currentAlgo)}】`;
-        
         sortedCount = 0;
         bubblePtr = 0;
         selectedIdx = -1;
         timeLeft = config.time;
-        
         startTimer();
         render();
     }
@@ -188,26 +216,22 @@
         const controls = document.getElementById('controls');
         board.innerHTML = '';
         controls.style.display = (currentAlgo === 'bubble') ? 'block' : 'none';
-
         cards.forEach((val, i) => {
             const slot = document.createElement('div');
             slot.className = 'card-slot';
             const card = document.createElement('div');
             card.className = 'card';
-            
             if (currentAlgo === 'selection' && i < sortedCount) card.classList.add('sorted');
             if (currentAlgo === 'insertion' && i <= sortedCount) card.classList.add('sorted');
             if (currentAlgo === 'bubble' && i >= cards.length - sortedCount) card.classList.add('sorted');
             if (currentAlgo === 'bubble' && (i === bubblePtr || i === bubblePtr + 1)) card.classList.add('comparing');
             if (currentAlgo === 'insertion' && i === selectedIdx) card.classList.add('selected');
-
             card.innerText = val;
-            card.onclick = () => handleCardClick(i);
+            card.onclick = () => { if(isGameRunning) handleCardClick(i); };
             const posBtn = document.createElement('div');
             posBtn.className = 'pos-btn';
             posBtn.innerText = i + 1;
-            posBtn.onclick = () => handlePosClick(i);
-
+            posBtn.onclick = () => { if(isGameRunning) handlePosClick(i); };
             slot.appendChild(card);
             slot.appendChild(posBtn);
             board.appendChild(slot);
@@ -215,17 +239,11 @@
     }
 
     function handleCardClick(idx) {
-        if (!isGameRunning) return;
         if (currentAlgo === 'selection') checkSelection(idx);
-        else if (currentAlgo === 'insertion' && idx === sortedCount + 1) {
-            selectedIdx = idx;
-            render();
-        }
+        else if (currentAlgo === 'insertion' && idx === sortedCount + 1) { selectedIdx = idx; render(); }
     }
 
-    function handlePosClick(posIdx) {
-        if (currentAlgo === 'insertion' && selectedIdx !== -1) checkInsertion(posIdx);
-    }
+    function handlePosClick(posIdx) { if (currentAlgo === 'insertion' && selectedIdx !== -1) checkInsertion(posIdx); }
 
     function handleBubble(userSwap) {
         const v1 = cards[bubblePtr];
@@ -241,11 +259,7 @@
     function checkSelection(idx) {
         let minIdx = sortedCount;
         for (let j = sortedCount + 1; j < cards.length; j++) if (cards[j] < cards[minIdx]) minIdx = j;
-        if (idx === minIdx) {
-            [cards[sortedCount], cards[minIdx]] = [cards[minIdx], cards[sortedCount]];
-            sortedCount++;
-            checkWin();
-        } else fail();
+        if (idx === minIdx) { [cards[sortedCount], cards[minIdx]] = [cards[minIdx], cards[sortedCount]]; sortedCount++; checkWin(); } else fail();
     }
 
     function checkInsertion(posIdx) {
@@ -255,9 +269,7 @@
         if (posIdx === correctIdx) {
             const [item] = cards.splice(selectedIdx, 1);
             cards.splice(posIdx, 0, item);
-            sortedCount++;
-            selectedIdx = -1;
-            checkWin();
+            sortedCount++; selectedIdx = -1; checkWin();
         } else fail();
     }
 
@@ -268,7 +280,7 @@
             setTimeout(() => {
                 currentQuestionIdx++;
                 if (currentQuestionIdx >= LEVELS[currentLevelIdx].questions) { currentQuestionIdx = 0; currentLevelIdx++; }
-                if (currentLevelIdx >= LEVELS.length) endGame(); else initQuestion();
+                if (currentLevelIdx >= LEVELS.length) showInputOverlay(); else initQuestion();
             }, 800);
         }
     }
@@ -278,7 +290,7 @@
         updateLives();
         document.getElementById('game-board').classList.add('shake');
         setTimeout(() => document.getElementById('game-board').classList.remove('shake'), 400);
-        if (lives <= 0) endGame();
+        if (lives <= 0) showInputOverlay();
     }
 
     function startTimer() {
@@ -294,15 +306,33 @@
 
     function updateLives() { document.getElementById('lives').innerText = "❤️".repeat(Math.max(0, lives)); }
     function getAlgoName(key) { return { bubble: '氣泡排序法', selection: '選擇排序法', insertion: '插入排序法' }[key]; }
-    function updateStatus(msg, type) { /* 僅用於 reset 提示 */ }
 
-    function endGame() {
+    // 顯示輸入畫面
+    function showInputOverlay() {
         isGameRunning = false;
         clearInterval(timerInterval);
-        document.getElementById('cert-screen').style.display = 'flex';
+        document.getElementById('input-overlay').style.display = 'flex';
+    }
+
+    // 生成證書
+    function generateCertificate() {
+        const school = document.getElementById('school-name').value || "未填寫學校";
+        const className = document.getElementById('class-name').value || "未填寫班級";
+        const userName = document.getElementById('user-name').value || "挑戰者";
+        
+        document.getElementById('display-school').innerText = school;
+        document.getElementById('display-class').innerText = className;
+        document.getElementById('display-name').innerText = userName;
+        
+        const now = new Date();
+        document.getElementById('cert-date-now').innerText = `${now.getFullYear()} / ${now.getMonth()+1} / ${now.getDate()}`;
+        
         const finalLvl = LEVELS[Math.min(currentLevelIdx, 3)].name;
-        document.getElementById('final-rank').innerText = lives > 0 ? "專業級大師" : finalLvl;
+        document.getElementById('final-rank').innerText = (currentLevelIdx >= 3 && lives > 0) ? "專業級大師" : finalLvl;
         document.getElementById('final-stats').innerText = `最高解鎖關卡：${finalLvl}`;
+        
+        document.getElementById('input-overlay').style.display = 'none';
+        document.getElementById('cert-screen').style.display = 'flex';
     }
 </script>
 
